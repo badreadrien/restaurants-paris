@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes adresses — Paris</title>
+<meta name="description" content="La liste personnelle d'Adrien : restaurants, bistrots et sandwichs à Paris, avec ses notes après visite.">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1>Mes adresses <span class="accent">— Paris</span></h1>
+    <p class="tagline">Restaurants, bistrots et sandwichs repérés, un par un. Après chaque visite, ma note et mon commentaire.</p>
+    <div id="editbar" class="editbar" hidden>
+      <span class="edit-badge">✏️ Mode édition actif sur cet appareil</span>
+      <button id="lockBtn" type="button" class="lock-btn">Verrouiller</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="list" class="list" aria-live="polite">
+    <p class="loading">Chargement…</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Liste personnelle. Les notes et commentaires sont synchronisés en ligne ; seule la personne disposant du lien d'édition peut les modifier.</p>
+  </div>
+</footer>
+
+<script src="/data.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

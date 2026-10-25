@@ -1,0 +1,1 @@
+{"dependencies":{"@vercel/blob":"^1.0.0"},"description":"Adrien's Paris restaurant list — Vercel static site + ratings API backed by Vercel Blob.","name":"restaurants-paris","private":true,"type":"module","version":"1.0.0"}
