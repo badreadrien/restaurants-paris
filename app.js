@@ -40,6 +40,9 @@
       subDone: 'ajouté ✓',
       emptyCity: 'Aucune adresse ici pour l’instant.',
       footer: 'Liste personnelle. Les notes et commentaires sont synchronisés en ligne ; seule la personne disposant du lien d’édition peut les modifier.',
+      enableEdit: 'Activer le mode édition',
+      enterKeyPrompt: 'Colle ton lien d’édition complet (ou juste la clé) :',
+      badKey: 'Clé refusée — vérifie que le lien d’édition est complet.',
       locale: 'fr-FR'
     },
     en: {
@@ -79,12 +82,38 @@
       subDone: 'added ✓',
       emptyCity: 'No addresses here yet.',
       footer: 'Personal list. Ratings and comments are synced online; only the holder of the edit link can change them.',
+      enableEdit: 'Enable edit mode',
+      enterKeyPrompt: 'Paste your full edit link (or just the key):',
+      badKey: 'Key rejected — check that the edit link is complete.',
       locale: 'en-US'
     }
   };
   var KNOWN_CITIES = ['Paris', 'Boston'];
 
-  var lang = localStorage.getItem('restaurantsLang')
+  // ---- Safe storage: iOS private mode / in-app browsers can block or throw
+  // on localStorage. Fall back to sessionStorage, then to memory, and never
+  // let a storage error break the page.
+  var memoryStore = {};
+  function lsGet(k) {
+    try { var v = window.localStorage.getItem(k); if (v != null) return v; } catch (e) {}
+    try { var s = window.sessionStorage.getItem(k); if (s != null) return s; } catch (e) {}
+    return (k in memoryStore) ? memoryStore[k] : null;
+  }
+  function lsSet(k, v) {
+    memoryStore[k] = v;
+    try { window.localStorage.setItem(k, v); } catch (e) {}
+    try { window.sessionStorage.setItem(k, v); } catch (e) {}
+  }
+  function lsRemove(k) {
+    delete memoryStore[k];
+    try { window.localStorage.removeItem(k); } catch (e) {}
+    try { window.sessionStorage.removeItem(k); } catch (e) {}
+  }
+  function lsPersisted(k) {
+    try { return window.localStorage.getItem(k) != null; } catch (e) { return false; }
+  }
+
+  var lang = lsGet('restaurantsLang')
     || ((navigator.language || 'fr').toLowerCase().indexOf('en') === 0 ? 'en' : 'fr');
   if (!STRINGS[lang]) lang = 'fr';
   function t() { return STRINGS[lang]; }
@@ -94,8 +123,8 @@
     return field[lang] || field.fr || field.en || '';
   }
 
-  var cityFilter = localStorage.getItem('restaurantsCity') || 'all';
-  var typeFilter = localStorage.getItem('restaurantsType') || 'all';
+  var cityFilter = lsGet('restaurantsCity') || 'all';
+  var typeFilter = lsGet('restaurantsType') || 'all';
   var CATEGORY_ORDER = ['bistrot', 'steakhouse', 'sandwich', 'bar-a-vin', 'cafe', 'rotisserie', 'gastronomique', 'bistronomique', 'italien', 'pizza'];
   var CATEGORIES = {
     bistrot: { fr: 'Bistrot', en: 'Bistro' },
@@ -115,12 +144,19 @@
   var params = new URLSearchParams(window.location.search);
   if (params.has('edit')) {
     var k = params.get('edit');
-    if (k) localStorage.setItem(KEY_STORAGE, k);
-    params.delete('edit');
-    var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.history.replaceState({}, '', clean);
+    if (k) {
+      lsSet(KEY_STORAGE, k);
+      // Only strip the key from the address bar once it is safely persisted;
+      // if storage is blocked (private mode, in-app browser), keep ?edit= in
+      // the URL so this tab keeps edit mode across reloads.
+      if (lsPersisted(KEY_STORAGE)) {
+        params.delete('edit');
+        var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', clean);
+      }
+    }
   }
-  function editKey() { return localStorage.getItem(KEY_STORAGE) || ''; }
+  function editKey() { return lsGet(KEY_STORAGE) || ''; }
   function isEditor() { return !!editKey(); }
 
   // ============================ State ======================================
@@ -155,6 +191,8 @@
     document.getElementById('addCityLabel').textContent = t().cityLabel;
     document.querySelector('#addCity option[value="__other"]').textContent = t().otherCity;
     document.getElementById('footerText').textContent = t().footer;
+    var enableBtn0 = document.getElementById('enableEdit');
+    if (enableBtn0) { enableBtn0.textContent = t().enableEdit; enableBtn0.hidden = isEditor(); }
     document.getElementById('langFr').classList.toggle('active', lang === 'fr');
     document.getElementById('langEn').classList.toggle('active', lang === 'en');
     renderCityBar();
@@ -166,7 +204,7 @@
   function setLang(next) {
     if (!STRINGS[next] || next === lang) return;
     lang = next;
-    localStorage.setItem('restaurantsLang', lang);
+    lsSet('restaurantsLang', lang);
     applyStrings();
   }
   document.getElementById('langFr').addEventListener('click', function () { setLang('fr'); });
@@ -175,9 +213,31 @@
   var editbar = document.getElementById('editbar');
   if (isEditor()) editbar.hidden = false;
   document.getElementById('lockBtn').addEventListener('click', function () {
-    localStorage.removeItem(KEY_STORAGE);
+    lsRemove(KEY_STORAGE);
     window.location.reload();
   });
+
+  // Manual activation fallback: works in ANY browser (incl. iOS in-app
+  // browsers whose storage is separate from Safari's). Accepts the full
+  // edit link pasted as-is, or just the key; verified against the API
+  // before anything is stored.
+  var enableBtn = document.getElementById('enableEdit');
+  if (enableBtn) {
+    enableBtn.addEventListener('click', function () {
+      var entered = window.prompt(t().enterKeyPrompt);
+      if (!entered) return;
+      entered = entered.trim();
+      var m = entered.match(/[?&]edit=([^&\s]+)/);
+      var key = m ? decodeURIComponent(m[1]) : entered;
+      fetch('/api/submissions', { headers: { 'x-edit-key': key, 'Accept': 'application/json' } })
+        .then(function (res) {
+          if (!res.ok) throw new Error('bad key');
+          lsSet(KEY_STORAGE, key);
+          window.location.reload();
+        })
+        .catch(function () { window.alert(t().badKey); });
+    });
+  }
 
   // ============================ City filter ==================================
   function citiesPresent() {
@@ -205,7 +265,7 @@
     bar.querySelectorAll('button.chip').forEach(function (btn) {
       btn.addEventListener('click', function () {
         cityFilter = btn.getAttribute('data-city');
-        localStorage.setItem('restaurantsCity', cityFilter);
+        lsSet('restaurantsCity', cityFilter);
         renderCityBar();
         renderTypeBar();
         render();
@@ -223,7 +283,7 @@
     inCity.forEach(function (r) { (r.types || []).forEach(function (k) { counts[k] = (counts[k] || 0) + 1; }); });
     if (typeFilter !== 'all' && !counts[typeFilter]) {
       typeFilter = 'all';
-      localStorage.setItem('restaurantsType', 'all');
+      lsSet('restaurantsType', 'all');
     }
     var html = '<button type="button" class="chip' + (typeFilter === 'all' ? ' active' : '') + '" data-type="all">' + esc(t().allTypes) + '</button>';
     CATEGORY_ORDER.forEach(function (k) {
@@ -235,7 +295,7 @@
     bar.querySelectorAll('button.chip').forEach(function (btn) {
       btn.addEventListener('click', function () {
         typeFilter = btn.getAttribute('data-type');
-        localStorage.setItem('restaurantsType', typeFilter);
+        lsSet('restaurantsType', typeFilter);
         renderTypeBar();
         render();
       });
@@ -321,7 +381,7 @@
       body: JSON.stringify({ id: id, rating: current.rating || 0, comment: current.comment || '' })
     }).then(function (res) {
       if (res.status === 401) {
-        localStorage.removeItem(KEY_STORAGE);
+        lsRemove(KEY_STORAGE);
         setState(id, t().invalidKey, 'err');
         throw new Error('unauthorized');
       }

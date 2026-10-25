@@ -121,6 +121,10 @@ body {
 .citybar .chip:hover { border-color: var(--accent); }
 .citybar .chip.active { background: var(--accent); border-color: var(--accent); color: #fdf8f2; }
 .typebar { padding-top: 10px; }
+.enable-edit {
+  background: none; border: none; padding: 4px 0; cursor: pointer;
+  color: var(--muted); font: inherit; font-size: .85rem; text-decoration: underline;
+}
 
 .city-select { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); }
 .city-select select {
