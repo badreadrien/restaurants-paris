@@ -120,6 +120,7 @@ body {
 }
 .citybar .chip:hover { border-color: var(--accent); }
 .citybar .chip.active { background: var(--accent); border-color: var(--accent); color: #fdf8f2; }
+.typebar { padding-top: 10px; }
 
 .city-select { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); }
 .city-select select {

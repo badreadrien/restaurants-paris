@@ -9,6 +9,7 @@
       editBadge: '✏️ Mode édition actif sur cet appareil',
       lock: 'Verrouiller',
       allCities: 'Toutes les villes',
+      allTypes: 'Tous les types',
       loading: 'Chargement…',
       myTake: 'Mon avis',
       commentPlaceholder: 'Ton commentaire après la visite…',
@@ -47,6 +48,7 @@
       editBadge: '✏️ Edit mode is on for this device',
       lock: 'Lock',
       allCities: 'All cities',
+      allTypes: 'All types',
       loading: 'Loading…',
       myTake: 'My take',
       commentPlaceholder: 'Your comment after the visit…',
@@ -93,6 +95,20 @@
   }
 
   var cityFilter = localStorage.getItem('restaurantsCity') || 'all';
+  var typeFilter = localStorage.getItem('restaurantsType') || 'all';
+  var CATEGORY_ORDER = ['bistrot', 'steakhouse', 'sandwich', 'bar-a-vin', 'cafe', 'rotisserie', 'gastronomique', 'bistronomique', 'italien', 'pizza'];
+  var CATEGORIES = {
+    bistrot: { fr: 'Bistrot', en: 'Bistro' },
+    steakhouse: { fr: 'Steakhouse', en: 'Steakhouse' },
+    sandwich: { fr: 'Sandwich', en: 'Sandwich' },
+    'bar-a-vin': { fr: 'Bar à vin', en: 'Wine bar' },
+    cafe: { fr: 'Café-brasserie', en: 'Café-brasserie' },
+    rotisserie: { fr: 'Rôtisserie', en: 'Rotisserie' },
+    gastronomique: { fr: 'Gastronomique', en: 'Fine dining' },
+    bistronomique: { fr: 'Bistronomique', en: 'Bistronomic' },
+    italien: { fr: 'Italien', en: 'Italian' },
+    pizza: { fr: 'Pizza', en: 'Pizza' }
+  };
 
   // ============================ Edit key ===================================
   var KEY_STORAGE = 'restaurantsEditKey';
@@ -142,6 +158,7 @@
     document.getElementById('langFr').classList.toggle('active', lang === 'fr');
     document.getElementById('langEn').classList.toggle('active', lang === 'en');
     renderCityBar();
+    renderTypeBar();
     render();
     renderSubmissions();
   }
@@ -190,10 +207,39 @@
         cityFilter = btn.getAttribute('data-city');
         localStorage.setItem('restaurantsCity', cityFilter);
         renderCityBar();
+        renderTypeBar();
         render();
       });
     });
     document.getElementById('siteCity').textContent = '— ' + (cityFilter === 'all' ? cities.join(' · ') : cityFilter);
+  }
+
+  // ============================ Type filter ==================================
+  function renderTypeBar() {
+    var bar = document.getElementById('typebar');
+    if (!bar) return;
+    var inCity = restaurants.filter(function (r) { return cityFilter === 'all' || r.city === cityFilter; });
+    var counts = {};
+    inCity.forEach(function (r) { (r.types || []).forEach(function (k) { counts[k] = (counts[k] || 0) + 1; }); });
+    if (typeFilter !== 'all' && !counts[typeFilter]) {
+      typeFilter = 'all';
+      localStorage.setItem('restaurantsType', 'all');
+    }
+    var html = '<button type="button" class="chip' + (typeFilter === 'all' ? ' active' : '') + '" data-type="all">' + esc(t().allTypes) + '</button>';
+    CATEGORY_ORDER.forEach(function (k) {
+      if (!counts[k]) return;
+      var label = (CATEGORIES[k] && CATEGORIES[k][lang]) || k;
+      html += '<button type="button" class="chip' + (typeFilter === k ? ' active' : '') + '" data-type="' + esc(k) + '">' + esc(label) + ' · ' + counts[k] + '</button>';
+    });
+    bar.innerHTML = html;
+    bar.querySelectorAll('button.chip').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        typeFilter = btn.getAttribute('data-type');
+        localStorage.setItem('restaurantsType', typeFilter);
+        renderTypeBar();
+        render();
+      });
+    });
   }
 
   // ============================ Cards ========================================
@@ -248,7 +294,11 @@
 
   function render() {
     var list = document.getElementById('list');
-    var visible = restaurants.filter(function (r) { return cityFilter === 'all' || r.city === cityFilter; });
+    var visible = restaurants.filter(function (r) {
+      if (cityFilter !== 'all' && r.city !== cityFilter) return false;
+      if (typeFilter !== 'all' && (r.types || []).indexOf(typeFilter) === -1) return false;
+      return true;
+    });
     list.innerHTML = visible.length
       ? visible.map(cardHtml).join('')
       : '<p class="loading">' + esc(t().emptyCity) + '</p>';
@@ -383,6 +433,7 @@
     restaurants = Array.isArray(results[0]) ? results[0] : [];
     ratings = results[1] || {};
     renderCityBar();
+    renderTypeBar();
     render();
     wireAddForm();
   });
