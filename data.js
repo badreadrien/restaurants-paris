@@ -107,5 +107,17 @@ window.RESTAURANTS = [
     "menu": null,
     "wineMenu": null,
     "website": "https://www.restaurant-le-quincy.com/"
+  },
+  {
+    "id": "zostera-paris",
+    "name": "Zostera",
+    "address": "40 Rue Pergolèse, 75116 Paris",
+    "type": "Gastronomique · Cuisine marine",
+    "price": "€€€€ · menus 65–185 €",
+    "description": "Étoilé du 16e (chef Julien Dumas, ex-Lucas Carton) dans l'ancien Pergolèse : cuisine marine et de cueillette, pêche durable — encornet cru à l'encre, artichaut cuit dans la cire d'abeille, homard à la bisque. Cave de ~900 références tenue par Samuel Ingelaere. Semaine uniquement.",
+    "maps": "https://www.google.com/maps/search/?api=1&query=Zostera+40+Rue+Pergol%C3%A8se%2C+75116+Paris",
+    "menu": "https://www.zostera.fr/",
+    "wineMenu": "https://www.zostera.fr/les-vins/",
+    "website": "https://www.zostera.fr/"
   }
 ];
