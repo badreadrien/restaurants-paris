@@ -1,4 +1,5 @@
 import { put, list, del } from '@vercel/blob';
+import { timingSafeEqual } from 'node:crypto';
 
 // Queue of "add this restaurant" requests submitted from the site itself.
 // One blob per submission (submissions/<id>.json), so creating or updating
@@ -48,7 +49,13 @@ async function writeOne(entry) {
 }
 
 function authorized(req) {
-  return !!process.env.EDIT_KEY && req.headers['x-edit-key'] === process.env.EDIT_KEY;
+  // Constant-time comparison (avoids leaking the key via response timing).
+  const expected = process.env.EDIT_KEY;
+  const given = req.headers['x-edit-key'];
+  if (!expected || typeof given !== 'string') return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export default async function handler(req, res) {

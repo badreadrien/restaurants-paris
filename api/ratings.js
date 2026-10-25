@@ -1,4 +1,5 @@
 import { put, list, del } from '@vercel/blob';
+import { timingSafeEqual } from 'node:crypto';
 
 // Adrien's own ratings + comments, one blob per restaurant (ratings/<id>.json)
 // so a save never overwrites another restaurant's note.
@@ -6,6 +7,16 @@ import { put, list, del } from '@vercel/blob';
 
 const PREFIX = 'ratings/';
 const MAX_COMMENT = 1000;
+
+// Constant-time key check (avoids leaking the key via response timing).
+function keyOk(req) {
+  const expected = process.env.EDIT_KEY;
+  const given = req.headers['x-edit-key'];
+  if (!expected || typeof given !== 'string') return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 async function readAll() {
   const out = {};
@@ -33,7 +44,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     // Only the holder of the edit key (Adrien) may write.
-    if (!process.env.EDIT_KEY || req.headers['x-edit-key'] !== process.env.EDIT_KEY) {
+    if (!keyOk(req)) {
       return res.status(401).json({ error: 'unauthorized' });
     }
 

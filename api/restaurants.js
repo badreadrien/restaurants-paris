@@ -1,4 +1,5 @@
 import { put, list, del } from '@vercel/blob';
+import { timingSafeEqual } from 'node:crypto';
 
 // The restaurant list lives server-side (Vercel Blob), not in the code.
 // One blob per restaurant (restaurants/<id>.json): writes never touch other
@@ -6,6 +7,16 @@ import { put, list, del } from '@vercel/blob';
 // GET is public (the page renders from it). Writes require the edit key.
 
 const PREFIX = 'restaurants/';
+
+// Constant-time key check (avoids leaking the key via response timing).
+function keyOk(req) {
+  const expected = process.env.EDIT_KEY;
+  const given = req.headers['x-edit-key'];
+  if (!expected || typeof given !== 'string') return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 async function readAll() {
   try {
@@ -55,7 +66,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    if (!process.env.EDIT_KEY || req.headers['x-edit-key'] !== process.env.EDIT_KEY) {
+    if (!keyOk(req)) {
       return res.status(401).json({ error: 'unauthorized' });
     }
     let body = req.body;
