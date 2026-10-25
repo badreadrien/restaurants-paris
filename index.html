@@ -20,6 +20,17 @@
 </header>
 
 <main class="wrap">
+  <section id="addbox" class="addbox" hidden>
+    <h2>Ajouter un restaurant</h2>
+    <p class="addbox-help">Tape un nom (et une précision si besoin : ville, quartier…). Je le vérifie, je l'enrichis — adresse, menu, carte des vins — et il apparaît ici au prochain passage, toutes les ~15 minutes.</p>
+    <div class="addbox-row">
+      <input id="addName" type="text" maxlength="120" placeholder="Nom du restaurant" autocomplete="off">
+      <input id="addNote" type="text" maxlength="300" placeholder="Précision (optionnel)" autocomplete="off">
+      <button id="addBtn" type="button">Ajouter</button>
+    </div>
+    <div id="addState" class="save-state"></div>
+    <ul id="subList" class="sublist"></ul>
+  </section>
   <div id="list" class="list" aria-live="polite">
     <p class="loading">Chargement…</p>
   </div>
@@ -31,7 +42,6 @@
   </div>
 </footer>
 
-<script src="/data.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

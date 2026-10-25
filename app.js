@@ -25,7 +25,9 @@
   });
 
   // --- State ---------------------------------------------------------------
-  var ratings = {}; // id -> { rating: 0..5, comment: string, updatedAt: string }
+  var restaurants = []; // from /api/restaurants (server-side list)
+  var ratings = {};     // id -> { rating: 0..5, comment: string, updatedAt: string }
+  var submissions = []; // from /api/submissions (edit mode only)
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -40,6 +42,7 @@
     } catch (e) { return ''; }
   }
 
+  // --- Restaurant cards ------------------------------------------------------
   function starsHtml(id, value, editable) {
     var out = '<span class="stars" role="img" aria-label="Note : ' + value + ' sur 5">';
     for (var i = 1; i <= 5; i++) {
@@ -91,18 +94,20 @@
 
   function render() {
     var list = document.getElementById('list');
-    list.innerHTML = window.RESTAURANTS.map(cardHtml).join('');
+    list.innerHTML = restaurants.length
+      ? restaurants.map(cardHtml).join('')
+      : '<p class="loading">Aucun restaurant pour le moment.</p>';
     wireEditors();
   }
 
-  // --- Saving ---------------------------------------------------------------
+  // --- Rating saving -----------------------------------------------------------
   var timers = {};
   function setState(id, text, cls) {
     var el = document.querySelector('[data-state-for="' + CSS.escape(id) + '"]');
     if (el) { el.textContent = text; el.className = 'save-state' + (cls ? ' ' + cls : ''); }
   }
 
-  function save(id) {
+  function saveRating(id) {
     var current = ratings[id] || { rating: 0, comment: '' };
     setState(id, 'Enregistrement…', '');
     fetch('/api/ratings', {
@@ -127,7 +132,7 @@
 
   function scheduleSave(id) {
     clearTimeout(timers[id]);
-    timers[id] = setTimeout(function () { save(id); }, 700);
+    timers[id] = setTimeout(function () { saveRating(id); }, 700);
   }
 
   function wireEditors() {
@@ -140,7 +145,7 @@
         current.rating = (current.rating === value) ? 0 : value; // click same star again to clear
         ratings[id] = current;
         render();
-        save(id);
+        saveRating(id);
       });
     });
     document.querySelectorAll('textarea[data-comment-for]').forEach(function (ta) {
@@ -155,12 +160,71 @@
     });
   }
 
-  // --- Load -------------------------------------------------------------------
-  fetch('/api/ratings', { headers: { 'Accept': 'application/json' } })
-    .then(function (res) { return res.ok ? res.json() : {}; })
-    .catch(function () { return {}; })
-    .then(function (data) {
-      ratings = data || {};
-      render();
+  // --- Add-a-restaurant form (edit mode only) -----------------------------------
+  function renderSubmissions() {
+    var ul = document.getElementById('subList');
+    if (!ul) return;
+    var visible = submissions.slice().reverse().slice(0, 8);
+    ul.innerHTML = visible.map(function (s) {
+      var label = s.status === 'done' ? 'ajouté ✓' : (s.status === 'cancelled' ? 'annulé' : 'en attente…');
+      var cls = s.status === 'done' ? 'done' : (s.status === 'cancelled' ? 'cancelled' : 'pending');
+      return '<li><span class="sub-name">' + esc(s.name) + '</span>'
+        + (s.note ? ' <span class="sub-note">(' + esc(s.note) + ')</span>' : '')
+        + ' <span class="sub-status ' + cls + '">' + label + '</span></li>';
+    }).join('');
+  }
+
+  function loadSubmissions() {
+    fetch('/api/submissions', { headers: { 'x-edit-key': editKey(), 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : []; })
+      .catch(function () { return []; })
+      .then(function (data) { submissions = Array.isArray(data) ? data : []; renderSubmissions(); });
+  }
+
+  function wireAddForm() {
+    if (!isEditor()) return;
+    var box = document.getElementById('addbox');
+    box.hidden = false;
+    var btn = document.getElementById('addBtn');
+    var nameInput = document.getElementById('addName');
+    var noteInput = document.getElementById('addNote');
+    var state = document.getElementById('addState');
+    btn.addEventListener('click', function () {
+      var name = nameInput.value.trim();
+      if (!name) { state.textContent = 'Écris d’abord le nom du restaurant.'; state.className = 'save-state err'; return; }
+      btn.disabled = true;
+      state.textContent = 'Envoi…'; state.className = 'save-state';
+      fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-edit-key': editKey() },
+        body: JSON.stringify({ name: name, note: noteInput.value.trim() })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('http ' + res.status);
+        return res.json();
+      }).then(function (data) {
+        if (data && data.entry) submissions.push(data.entry);
+        nameInput.value = ''; noteInput.value = '';
+        renderSubmissions();
+        state.textContent = 'Bien reçu ! Je le vérifie et je l’ajoute au prochain passage (toutes les ~15 min).';
+        state.className = 'save-state ok';
+      }).catch(function () {
+        state.textContent = 'Échec de l’envoi, réessaie.';
+        state.className = 'save-state err';
+      }).then(function () { btn.disabled = false; });
     });
+    loadSubmissions();
+  }
+
+  // --- Load -----------------------------------------------------------------------
+  Promise.all([
+    fetch('/api/restaurants', { headers: { 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : []; }).catch(function () { return []; }),
+    fetch('/api/ratings', { headers: { 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : {}; }).catch(function () { return {}; })
+  ]).then(function (results) {
+    restaurants = Array.isArray(results[0]) ? results[0] : [];
+    ratings = results[1] || {};
+    render();
+    wireAddForm();
+  });
 })();

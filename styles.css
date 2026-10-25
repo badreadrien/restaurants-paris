@@ -102,6 +102,38 @@ body {
 .save-state.ok { color: var(--ok); }
 .save-state.err { color: var(--accent); }
 
+.addbox {
+  background: var(--card);
+  border: 1px dashed var(--accent);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 26px;
+  font-family: system-ui, sans-serif;
+}
+.addbox h2 { margin: 0 0 6px; font-size: 1.1rem; color: var(--accent); }
+.addbox-help { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+.addbox-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.addbox-row input {
+  flex: 1 1 180px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
+  font: inherit; font-size: .95rem; background: #fffdf9;
+}
+.addbox-row input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.addbox-row button {
+  background: var(--accent); color: #fdf8f2; border: 0; border-radius: 8px;
+  padding: 9px 18px; font: inherit; font-size: .95rem; cursor: pointer;
+}
+.addbox-row button:hover { filter: brightness(1.1); }
+.addbox-row button:disabled { opacity: .6; cursor: wait; }
+.sublist { list-style: none; margin: 10px 0 0; padding: 0; font-size: .9rem; }
+.sublist li { padding: 3px 0; border-top: 1px solid var(--line); }
+.sublist li:first-child { border-top: 0; }
+.sub-note { color: var(--muted); }
+.sub-status { border-radius: 999px; padding: 1px 8px; font-size: .75rem; }
+.sub-status.pending { background: #fdf3d7; color: #7a5b12; }
+.sub-status.done { background: #e5f2e8; color: var(--ok); }
+.sub-status.cancelled { background: #eee; color: var(--muted); }
+
 .site-footer { color: var(--muted); font-size: .85rem; padding: 14px 0 34px; }
 
 @media (max-width: 720px) {

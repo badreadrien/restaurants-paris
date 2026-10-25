@@ -1,19 +1,27 @@
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
-const BLOB_PATH = 'ratings.json';
+// Adrien's own ratings + comments, one blob per restaurant (ratings/<id>.json)
+// so a save never overwrites another restaurant's note.
+// GET is public (the page displays them); POST requires the edit key.
+
+const PREFIX = 'ratings/';
 const MAX_COMMENT = 1000;
 
 async function readAll() {
+  const out = {};
   try {
-    const { blobs } = await list({ prefix: BLOB_PATH, limit: 1 });
-    if (!blobs || blobs.length === 0) return {};
-    const res = await fetch(blobs[0].url);
-    if (!res.ok) return {};
-    const data = await res.json();
-    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
-  } catch {
-    return {};
-  }
+    const { blobs } = await list({ prefix: PREFIX, limit: 1000 });
+    await Promise.all(blobs.map(async (b) => {
+      try {
+        const res = await fetch(b.url + '?v=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const id = b.pathname.slice(PREFIX.length).replace(/\.json$/, '');
+        if (data && typeof data === 'object') out[id] = data;
+      } catch { /* skip unreadable blob */ }
+    }));
+  } catch { /* no ratings yet */ }
+  return out;
 }
 
 export default async function handler(req, res) {
@@ -42,21 +50,28 @@ export default async function handler(req, res) {
     }
     const comment = typeof body.comment === 'string' ? body.comment.trim().slice(0, MAX_COMMENT) : '';
 
-    const all = await readAll();
+    const path = PREFIX + body.id + '.json';
+    let written = null;
     if (rating === 0 && comment === '') {
-      delete all[body.id];
+      const { blobs } = await list({ prefix: path, limit: 1 });
+      const hit = blobs.find((b) => b.pathname === path);
+      if (hit) await del(hit.url);
     } else {
-      all[body.id] = { rating, comment, updatedAt: new Date().toISOString() };
+      written = { rating, comment, updatedAt: new Date().toISOString() };
+      await put(path, JSON.stringify(written), {
+        access: 'public',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'application/json'
+      });
     }
 
-    await put(BLOB_PATH, JSON.stringify(all), {
-      access: 'public',
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: 'application/json'
-    });
-
-    return res.status(200).json({ ok: true, ratings: all });
+    // Merge the just-made change over the read-back: an overwritten blob can
+    // be served stale for ~a minute by the CDN, and the response must reflect
+    // the write so the UI never appears to revert a save.
+    const ratings = await readAll();
+    if (written) ratings[body.id] = written; else delete ratings[body.id];
+    return res.status(200).json({ ok: true, ratings });
   }
 
   res.setHeader('Allow', 'GET, POST');

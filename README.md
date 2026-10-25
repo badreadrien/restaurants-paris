@@ -1,34 +1,40 @@
 # Mes adresses — Paris
 
-Adrien's personal Paris restaurant list, deployed on Vercel. Code lives here; the
-restaurant data is baked into `data.js` from `~/workspace/restaurants/restaurants.json`
-(the source of truth maintained in the Restaurants chat).
+Adrien's personal Paris restaurant list, deployed on Vercel. **This repo holds code
+only — all data lives server-side** in a Vercel Blob store attached to the project.
 
-## What's on the page
+## Architecture (v2)
 
-One card per restaurant: name, address, type of restaurant, price range, a short
-description, and links — Google Maps, the menu, the wine list (when it exists as a
-separate page), and the official website. The **Mon avis** column shows Adrien's own
-rating (stars) and comment after he visits.
+All data lives in the project's Vercel Blob store, one small JSON document per
+record (so concurrent writes can't clobber each other), written through
+key-gated API functions:
 
-## How editing works (synced, owner-only)
+- `restaurants/<id>.json` — the list itself. `GET /api/restaurants` is public
+  (the page renders from it); writes (`POST` with an array, `{add: record}` or
+  `{remove: id}`) require the edit key.
+- `ratings/<id>.json` — Adrien's own stars + comments ("Mon avis").
+  `GET /api/ratings` public; `POST` requires the edit key.
+- `submissions/<id>.json` — the "add a restaurant" queue. All methods require
+  the edit key. The site's form (edit mode) posts a name here; a scheduled job
+  on Adrien's Muse picks pending entries up every ~15 minutes, verifies and
+  enriches them (address, type, price, description, menu and wine-list links),
+  adds them via `/api/restaurants`, and marks the submission done.
 
-- Viewing is public: anyone with the site URL can read the list and the ratings.
-- Ratings/comments are stored online in a Vercel Blob file (`ratings.json`) via
-  `api/ratings.js`, so they are the same on every device.
-- Writing requires the secret edit key, held in the Vercel project env var
-  `EDIT_KEY` (never committed here). To unlock editing on a device, open the site
-  once with the edit link: `https://<site>/?edit=<EDIT_KEY>`. The browser remembers
-  the key on that device; the **Verrouiller** button in the header forgets it.
-- `GET /api/ratings` is public; `POST /api/ratings` returns 401 without the key.
+The edit key lives only in the Vercel project env var `EDIT_KEY` (never in this
+repo). To unlock editing on a device, open the site once with the edit link:
+`https://<site>/?edit=<EDIT_KEY>`. The browser remembers the key on that device;
+the **Verrouiller** button in the header forgets it.
 
 ## Layout
 
-- `index.html`, `styles.css`, `app.js` — the page (no framework, no build step)
-- `data.js` — the restaurant list (`window.RESTAURANTS`)
-- `api/ratings.js` — Vercel Function for the synced ratings (uses `@vercel/blob`)
+- `index.html`, `styles.css`, `app.js` — the page (no framework, no build step);
+  the list is fetched from `/api/restaurants` at load.
+- `api/restaurants.js` — the list (Blob-backed).
+- `api/ratings.js` — Adrien's ratings/comments (Blob-backed).
+- `api/submissions.js` — the add-a-restaurant queue (Blob-backed, key-gated).
 
 ## Updating the list
 
-Edit `data.js` (or regenerate it from the source JSON), commit, and redeploy.
-Ratings live in Blob storage and survive redeploys.
+Use the site's own form (edit mode), or ask Muse in chat — both end up in the
+server-side list. No redeploy is needed for data changes; redeploys are only for
+code changes.
