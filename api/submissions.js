@@ -1,4 +1,4 @@
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 // Queue of "add this restaurant" requests submitted from the site itself.
 // One blob per submission (submissions/<id>.json), so creating or updating
@@ -96,6 +96,16 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, entry });
   }
 
-  res.setHeader('Allow', 'GET, POST, PATCH');
+  if (req.method === 'DELETE') {
+    const id = (body && typeof body.id === 'string' && body.id) || (req.query && req.query.id) || '';
+    if (!id) return res.status(400).json({ error: 'bad id' });
+    const { blobs } = await list({ prefix: PREFIX + id + '.json', limit: 1 });
+    const hit = blobs.find((b) => b.pathname === PREFIX + id + '.json');
+    if (!hit) return res.status(404).json({ error: 'not found' });
+    await del(hit.url);
+    return res.status(200).json({ ok: true });
+  }
+
+  res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
   return res.status(405).json({ error: 'method not allowed' });
 }

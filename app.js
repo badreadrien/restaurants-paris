@@ -164,7 +164,7 @@
   function renderSubmissions() {
     var ul = document.getElementById('subList');
     if (!ul) return;
-    var visible = submissions.slice().reverse().slice(0, 8);
+    var visible = submissions.filter(function (s) { return s.status !== 'cancelled'; }).slice().reverse().slice(0, 8);
     ul.innerHTML = visible.map(function (s) {
       var label = s.status === 'done' ? 'ajouté ✓' : (s.status === 'cancelled' ? 'annulé' : 'en attente…');
       var cls = s.status === 'done' ? 'done' : (s.status === 'cancelled' ? 'cancelled' : 'pending');
