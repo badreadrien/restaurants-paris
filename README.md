@@ -1,9 +1,20 @@
-# Mes adresses — Paris
+# Mes adresses — Paris · Boston
 
-Adrien's personal Paris restaurant list, deployed on Vercel. **This repo holds code
+Adrien's personal restaurant list, deployed on Vercel. **This repo holds code
 only — all data lives server-side** in a Vercel Blob store attached to the project.
 
-## Architecture (v2)
+## Architecture (v3)
+
+Same storage as v2 (below), plus:
+
+- **Bilingual FR/EN** — a language toggle in the header (choice remembered per
+  device, default from the browser language). Every record carries its `type`,
+  `price` and `description` in both languages (`{fr, en}`), so an entry written
+  in French is equally available in English and vice versa.
+- **Multi-city** — every record has a `city`. The page shows city filter chips
+  (All / Paris / Boston / …) and the add form has a city choice
+  (Paris / Boston / Other); submissions carry the chosen city to the processing
+  job, which writes both language versions of every new entry.
 
 All data lives in the project's Vercel Blob store, one small JSON document per
 record (so concurrent writes can't clobber each other), written through

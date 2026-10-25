@@ -102,6 +102,31 @@ body {
 .save-state.ok { color: var(--ok); }
 .save-state.err { color: var(--accent); }
 
+.langbar {
+  float: right; font-family: system-ui, sans-serif; font-size: .9rem;
+  display: flex; gap: 6px; align-items: center;
+}
+.langbar button {
+  background: transparent; color: #f2ddd3; border: 1px solid transparent;
+  border-radius: 999px; padding: 3px 10px; cursor: pointer; font: inherit;
+}
+.langbar button.active { background: #fdf8f2; color: var(--accent); font-weight: 600; }
+.langbar button:hover { border-color: #fdf8f2; }
+
+.citybar { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 22px; font-family: system-ui, sans-serif; }
+.citybar .chip {
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; font-size: .92rem;
+}
+.citybar .chip:hover { border-color: var(--accent); }
+.citybar .chip.active { background: var(--accent); border-color: var(--accent); color: #fdf8f2; }
+
+.city-select { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); }
+.city-select select {
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 8px;
+  font: inherit; font-size: .95rem; background: #fffdf9; color: var(--ink);
+}
+
 .addbox {
   background: var(--card);
   border: 1px dashed var(--accent);

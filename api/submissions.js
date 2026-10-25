@@ -70,10 +70,12 @@ export default async function handler(req, res) {
     const name = body && typeof body.name === 'string' ? body.name.trim().slice(0, MAX_NAME) : '';
     if (!name) return res.status(400).json({ error: 'name required' });
     const note = body && typeof body.note === 'string' ? body.note.trim().slice(0, MAX_NOTE) : '';
+    const city = body && typeof body.city === 'string' ? body.city.trim().slice(0, 40) : '';
     const entry = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
       name,
       note,
+      city,
       status: 'pending',
       submittedAt: new Date().toISOString()
     };

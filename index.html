@@ -3,34 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mes adresses — Paris</title>
-<meta name="description" content="La liste personnelle d'Adrien : restaurants, bistrots et sandwichs à Paris, avec ses notes après visite.">
+<title>Mes adresses — Paris · Boston</title>
+<meta name="description" content="La liste personnelle d'Adrien : restaurants et bonnes tables à Paris, Boston et ailleurs, avec ses notes après visite.">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <header class="site-header">
   <div class="wrap">
-    <h1>Mes adresses <span class="accent">— Paris</span></h1>
-    <p class="tagline">Restaurants, bistrots et sandwichs repérés, un par un. Après chaque visite, ma note et mon commentaire.</p>
+    <div class="langbar" role="group" aria-label="Langue / Language">
+      <button id="langFr" type="button">FR</button>
+      <span aria-hidden="true">·</span>
+      <button id="langEn" type="button">EN</button>
+    </div>
+    <h1><span id="siteTitle">Mes adresses</span> <span class="accent" id="siteCity">— Paris · Boston</span></h1>
+    <p class="tagline" id="tagline">Restaurants, bistrots et tables repérés un par un. Après chaque visite, ma note et mon commentaire.</p>
     <div id="editbar" class="editbar" hidden>
-      <span class="edit-badge">✏️ Mode édition actif sur cet appareil</span>
+      <span class="edit-badge" id="editBadgeText">✏️ Mode édition actif sur cet appareil</span>
       <button id="lockBtn" type="button" class="lock-btn">Verrouiller</button>
     </div>
   </div>
 </header>
 
 <main class="wrap">
+  <nav id="citybar" class="citybar" aria-label="Villes / Cities"></nav>
+
   <section id="addbox" class="addbox" hidden>
-    <h2>Ajouter un restaurant</h2>
-    <p class="addbox-help">Tape un nom (et une précision si besoin : ville, quartier…). Je le vérifie, je l'enrichis — adresse, menu, carte des vins — et il apparaît ici au prochain passage, toutes les ~15 minutes.</p>
+    <h2 id="addTitle">Ajouter un restaurant</h2>
+    <p class="addbox-help" id="addHelp">Tape un nom, choisis la ville (et une précision si besoin). Je le vérifie, je l'enrichis — adresse, menu, carte des vins — et il apparaît ici au prochain passage, toutes les ~15 minutes.</p>
     <div class="addbox-row">
       <input id="addName" type="text" maxlength="120" placeholder="Nom du restaurant" autocomplete="off">
+      <label class="city-select"><span id="addCityLabel">Ville</span>
+        <select id="addCity">
+          <option value="Paris" selected>Paris</option>
+          <option value="Boston">Boston</option>
+          <option value="__other">Autre</option>
+        </select>
+      </label>
       <input id="addNote" type="text" maxlength="300" placeholder="Précision (optionnel)" autocomplete="off">
       <button id="addBtn" type="button">Ajouter</button>
     </div>
     <div id="addState" class="save-state"></div>
     <ul id="subList" class="sublist"></ul>
   </section>
+
   <div id="list" class="list" aria-live="polite">
     <p class="loading">Chargement…</p>
   </div>
@@ -38,7 +53,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Liste personnelle. Les notes et commentaires sont synchronisés en ligne ; seule la personne disposant du lien d'édition peut les modifier.</p>
+    <p id="footerText">Liste personnelle. Les notes et commentaires sont synchronisés en ligne ; seule la personne disposant du lien d'édition peut les modifier.</p>
   </div>
 </footer>
 
