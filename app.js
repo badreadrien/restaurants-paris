@@ -125,7 +125,7 @@
 
   var cityFilter = lsGet('restaurantsCity') || 'all';
   var typeFilter = lsGet('restaurantsType') || 'all';
-  var CATEGORY_ORDER = ['bistrot', 'steakhouse', 'sandwich', 'bar-a-vin', 'cafe', 'rotisserie', 'gastronomique', 'bistronomique', 'italien', 'pizza'];
+  var CATEGORY_ORDER = ['bistrot', 'steakhouse', 'sandwich', 'bar-a-vin', 'cafe', 'rotisserie', 'gastronomique', 'bistronomique', 'italien', 'pizza', 'americain', 'japonais', 'mediterraneen'];
   var CATEGORIES = {
     bistrot: { fr: 'Bistrot', en: 'Bistro' },
     steakhouse: { fr: 'Steakhouse', en: 'Steakhouse' },
@@ -136,7 +136,10 @@
     gastronomique: { fr: 'Gastronomique', en: 'Fine dining' },
     bistronomique: { fr: 'Bistronomique', en: 'Bistronomic' },
     italien: { fr: 'Italien', en: 'Italian' },
-    pizza: { fr: 'Pizza', en: 'Pizza' }
+    japonais: { fr: 'Japonais', en: 'Japanese' },
+    mediterraneen: { fr: 'Méditerranéen', en: 'Mediterranean' },
+    pizza: { fr: 'Pizza', en: 'Pizza' },
+    americain: { fr: 'Américain', en: 'American' }
   };
 
   // ============================ Edit key ===================================
